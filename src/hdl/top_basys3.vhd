@@ -86,12 +86,47 @@ end top_basys3;
 architecture top_basys3_arch of top_basys3 is 
   
 	-- declare components
-
+component thunderbird_fsm is
+    port (
+           i_reset      : in  STD_LOGIC;
+           i_clk        : in  STD_LOGIC;
+           i_left       : in  STD_LOGIC;
+           i_right      : in  STD_LOGIC;
+           o_L_Left     : out  STD_LOGIC_VECTOR(2 downto 0);
+           o_R_Right    : out  STD_LOGIC_VECTOR(2 downto 0)
+          );
+end component thunderbird_fsm;
   
+component clock_divider is
+	generic ( constant k_DIV : natural := 2	);
+	port (  i_clk    : in std_logic;		   -- basys3 clk
+			i_reset  : in std_logic;		   -- asynchronous
+			o_clk    : out std_logic		   -- divided (slow) clock
+	);
+end component clock_divider;
+
+	signal w_clk : std_logic;
+	
 begin
 	-- PORT MAPS ----------------------------------------
-
-	
+thunderbird_fsm_inst : thunderbird_fsm
+    port map (
+          i_reset => btnR,
+          i_clk => w_clk,
+          i_left => sw(15),
+          i_right => sw(0),
+          o_L_Left(2 downto 0) => led(15 downto 13),
+          o_R_Right(2 downto 0) => led(2 downto 0)
+            );
+         
+clkdiv_inst : clock_divider
+    generic map (k_DIV => 25000000)
+    port map (
+         i_clk => clk,
+         i_reset => btnL,
+         o_clk => w_clk
+         );
+      
 	
 	-- CONCURRENT STATEMENTS ----------------------------
 	

@@ -58,27 +58,80 @@ architecture test_bench of thunderbird_fsm_tb is
 	
 	component thunderbird_fsm is 
 	  port(
+	        i_clk, i_reset  : in    std_logic;
+            i_left, i_right : in    std_logic;
+            o_L_Left        : out   std_logic_vector(2 downto 0);
+            o_R_Right       : out   std_logic_vector(2 downto 0)
 		
 	  );
 	end component thunderbird_fsm;
 
 	-- test I/O signals
+	    signal w_R : std_logic := '0';
+	    signal w_L : std_logic := '0';
+	    signal w_reset : std_logic := '0';
+	    signal w_clk : std_logic := '0';
+	    
+	    signal w_L_Light : std_logic_vector(2 downto 0) := "000";
+	    signal W_R_Light : std_logic_vector(2 downto 0) := "000";	  
 	
 	-- constants
+	   constant k_clk_period : time := 10 ns;
 	
 	
 begin
 	-- PORT MAPS ----------------------------------------
-	
+	uut: thunderbird_fsm port map (
+	        i_left => w_L,
+	        i_right => w_R,
+	        i_reset => w_reset,
+	        i_clk => w_clk,
+	        o_L_Left => w_L_Light,
+	        o_R_Right => w_R_Light
+          );	      
 	-----------------------------------------------------
 	
 	-- PROCESSES ----------------------------------------	
     -- Clock process ------------------------------------
-    
+    clk_proc : process
+        begin
+            w_clk <= '0';
+            wait for k_clk_period/2;
+            w_clk <= '1';
+            wait for k_clk_period/2;
+        end process;
 	-----------------------------------------------------
 	
 	-- Test Plan Process --------------------------------
-	
+	sim_proc: process
+	    begin
+	        w_reset <= '1';
+	        wait for k_clk_period *1;
+	          assert w_L_Light = "000" report "bad reset" severity failure;
+	          assert w_R_Light = "000" report "bad reset" severity failure;
+	        w_reset <= '0';
+	        w_L <= '1';
+	        wait for k_clk_period *1;
+              assert w_L_Light = "001" report "bad left signal" severity failure;
+              assert w_R_Light = "000" report "bad left signal" severity failure;
+	        w_L <= '0';
+	        w_R <= '1';
+	        wait for k_clk_period *4;
+               assert w_L_Light = "000" report "bad right signal" severity failure;
+               assert w_R_Light = "100" report "bad right signal" severity failure;
+            wait for k_clk_period *3;
+            w_R <= '0';
+            w_L <= '1';
+            w_R <= '1';
+            wait for k_clk_period*1;
+              assert w_L_Light = "111" report "bad hazard signal" severity failure;
+              assert w_R_Light = "111" report "bad hazard signal" severity failure;
+            w_L <= '0';
+            w_R <= '0';
+            
+            w_reset <= '0';
+            wait for k_clk_period*1;
+    end process;
 	-----------------------------------------------------	
 	
 end test_bench;
